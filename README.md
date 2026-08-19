@@ -24,7 +24,8 @@ Um sistema externo (com uma chave de API válida) pergunta ao `evaluation-servic
 
 O ambiente local usa Docker Compose para subir os 5 microsserviços mais 4 bancos de dados locais (2 instâncias PostgreSQL, Redis, e DynamoDB Local) — 9 containers no total.
 
-**Pré-requisito:** crie um arquivo `.env` na raiz do projeto.
+**Pré-requisito:** crie um arquivo `.env` na raiz do projeto com:
+POSTGRES_PASSWORD=sua_senha_aqui
 
 
 Cada microsserviço também tem seu próprio arquivo `.env` interno (não incluído neste repositório por segurança) — consulte o `README.md` de cada serviço para as variáveis necessárias.
