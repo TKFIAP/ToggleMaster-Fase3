@@ -13,7 +13,7 @@ Este projeto foi desenvolvido para o **Tech Challenge Fase 2** da POSTECH, evolu
 | **auth-service** | Go | Gera e valida as chaves de API que autenticam as requisições ao sistema | PostgreSQL |
 | **flag-service** | Python | CRUD das definições das feature flags (criar, listar, ativar/desativar) | PostgreSQL |
 | **targeting-service** | Python | Gerencia as regras de segmentação (para quais usuários uma flag está ativa) | PostgreSQL |
-| **evaluation-service** | Go | O "caminho quente" (hot path) — recebe a pergunta "essa flag deve aparecer para este usuário?" e responde em tempo real, com alta performance | Redis (cache) |
+| **evaluation-service** | Go | O "caminho quente" (hot path) , recebe a pergunta "essa flag deve aparecer para este usuário?" e responde em tempo real, com alta performance | Redis (cache) |
 | **analytics-service** | Python | Consome os eventos de avaliação de uma fila e salva um histórico para análise | SQS + DynamoDB |
 
 ### Fluxo resumido de uma requisição
@@ -66,8 +66,16 @@ Todos os manifestos Kubernetes estão na pasta [`k8s/`](./k8s).
 - `analytics-service/` — Código-fonte + Dockerfile
 - `k8s/` — Manifestos Kubernetes (Deployments, Services, Ingress, HPA, etc.)
 - `docker-compose.yml` — Sobe o ambiente local completo
-- `.gitignore`
 
+
+
+
+
+
+## Publicação das imagens
+
+As imagens Docker dos 5 microsserviços também foram publicadas no Docker Hub:
+https://hub.docker.com/u/tkfiap
 ## Código-fonte original
 
 Código-fonte base dos 5 microsserviços fornecido pelo desafio, disponível em: https://github.com/FIAP-TCs
