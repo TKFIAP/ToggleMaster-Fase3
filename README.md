@@ -18,19 +18,19 @@ Este projeto foi desenvolvido para o **Tech Challenge Fase 2** da POSTECH, evolu
 
 ### Fluxo resumido de uma requisição
 
-Um sistema externo (com uma chave de API válida) pergunta ao `evaluation-service` se uma flag deve aparecer para um usuário. O `auth-service` valida a chave. O `evaluation-service` consulta o Redis (cache) — se não tiver a configuração da flag em cache, busca no `flag-service` e no `targeting-service`, guarda em cache, e calcula o resultado (`true`/`false`) para aquele usuário. Ao mesmo tempo, envia um evento para a fila SQS, que o `analytics-service` processa e salva no DynamoDB, formando um histórico de todas as avaliações realizadas.
+Um sistema externo (com uma chave de API válida) pergunta ao `evaluation-service` se uma flag deve aparecer para um usuário. O `auth-service` valida a chave. O `evaluation-service` consulta o Redis (cache) , se não tiver a configuração da flag em cache, busca no `flag-service` e no `targeting-service`, guarda em cache, e calcula o resultado (`true`/`false`) para aquele usuário. Ao mesmo tempo, envia um evento para a fila SQS, que o `analytics-service` processa e salva no DynamoDB, formando um histórico de todas as avaliações realizadas.
 
 ## Rodando localmente
 
-O ambiente local usa Docker Compose para subir os 5 microsserviços mais 5 bancos de dados/serviços locais (3 instâncias PostgreSQL, Redis, e DynamoDB Local) — 10 containers no total.
+O ambiente local usa Docker Compose para subir os 5 microsserviços mais 5 bancos de dados/serviços locais (3 instâncias PostgreSQL, Redis, e DynamoDB Local) , 10 containers no total.
 
-> **Nota:** o documento do desafio menciona 2 instâncias PostgreSQL localmente (9 containers no total). Optamos por manter 3 instâncias separadas — uma por serviço — para manter consistência com a arquitetura usada na nuvem, onde cada serviço também tem seu próprio banco RDS independente.
+> **Nota:** o documento do desafio menciona 2 instâncias PostgreSQL localmente (9 containers no total). Optamos por manter 3 instâncias separadas , uma por serviço , para manter consistência com a arquitetura usada na nuvem, onde cada serviço também tem seu próprio banco RDS independente.
 
 **Pré-requisito:** crie um arquivo `.env` na raiz do projeto com:
 POSTGRES_PASSWORD=sua_senha_aqui
 
 
-Cada microsserviço também tem seu próprio arquivo `.env` interno (não incluído neste repositório por segurança) — consulte o `README.md` de cada serviço para as variáveis necessárias.
+Cada microsserviço também tem seu próprio arquivo `.env` interno (não incluído neste repositório por segurança),, consulte o `README.md` de cada serviço para as variáveis necessárias.
 
 **Subir o ambiente:**
 ```bash
