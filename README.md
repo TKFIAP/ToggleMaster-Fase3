@@ -22,7 +22,9 @@ Um sistema externo (com uma chave de API válida) pergunta ao `evaluation-servic
 
 ## Rodando localmente
 
-O ambiente local usa Docker Compose para subir os 5 microsserviços mais 4 bancos de dados locais (2 instâncias PostgreSQL, Redis, e DynamoDB Local) — 9 containers no total.
+O ambiente local usa Docker Compose para subir os 5 microsserviços mais 5 bancos de dados/serviços locais (3 instâncias PostgreSQL, Redis, e DynamoDB Local) — 10 containers no total.
+
+> **Nota:** o documento do desafio menciona 2 instâncias PostgreSQL localmente (9 containers no total). Optamos por manter 3 instâncias separadas — uma por serviço — para manter consistência com a arquitetura usada na nuvem, onde cada serviço também tem seu próprio banco RDS independente.
 
 **Pré-requisito:** crie um arquivo `.env` na raiz do projeto com:
 POSTGRES_PASSWORD=sua_senha_aqui
@@ -35,7 +37,7 @@ Cada microsserviço também tem seu próprio arquivo `.env` interno (não inclu�
 docker compose up -d
 ```
 
-**Conferir que os 9 containers estão rodando:**
+**Conferir que os 10 containers estão rodando:**
 ```bash
 docker compose ps
 ```
