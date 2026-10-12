@@ -1,3 +1,10 @@
 k8s/secrets.yaml
 */.env
 .env
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+crash.log
