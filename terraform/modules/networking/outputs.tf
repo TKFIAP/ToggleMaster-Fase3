@@ -12,3 +12,8 @@ output "private_subnet_ids" {
   description = "IDs das subnets privadas (RDS e Redis)"
   value       = aws_subnet.private[*].id
 }
+
+output "vpc_cidr_block" {
+  description = "Faixa de enderecos da VPC"
+  value       = aws_vpc.main.cidr_block
+}

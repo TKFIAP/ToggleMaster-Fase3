@@ -15,3 +15,13 @@ module "eks" {
   node_role_arn    = data.aws_iam_role.lab_role.arn
   subnet_ids       = module.networking.public_subnet_ids
 }
+
+module "databases" {
+  source             = "./modules/databases"
+  project_name       = var.project_name
+  vpc_id             = module.networking.vpc_id
+  vpc_cidr_block     = module.networking.vpc_cidr_block
+  private_subnet_ids = module.networking.private_subnet_ids
+  db_username        = var.db_username
+  db_password        = var.db_password
+}
