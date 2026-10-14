@@ -25,3 +25,8 @@ module "databases" {
   db_username        = var.db_username
   db_password        = var.db_password
 }
+
+module "messaging" {
+  source       = "./modules/messaging"
+  project_name = var.project_name
+}
