@@ -30,3 +30,14 @@ module "messaging" {
   source       = "./modules/messaging"
   project_name = var.project_name
 }
+
+module "ecr" {
+  source = "./modules/ecr"
+  repository_names = [
+    "auth-service",
+    "flag-service",
+    "targeting-service",
+    "evaluation-service",
+    "analytics-service",
+  ]
+}
