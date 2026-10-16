@@ -1,0 +1,95 @@
+name: evaluation-service
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "evaluation-service/**"
+      - ".github/workflows/evaluation-service.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "evaluation-service/**"
+      - ".github/workflows/evaluation-service.yml"
+  workflow_dispatch:
+
+jobs:
+  build-test:
+    name: Build e testes
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: evaluation-service
+    steps:
+      - name: Baixar o codigo
+        uses: actions/checkout@v5
+
+      - name: Instalar o Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "1.26"
+          cache: false
+
+      - name: Baixar as dependencias
+        run: go mod tidy
+
+      - name: Compilar
+        run: go build ./...
+
+      - name: Testes unitarios
+        run: go test ./...
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-24.04
+    needs: build-test
+    defaults:
+      run:
+        working-directory: evaluation-service
+    steps:
+      - name: Baixar o codigo
+        uses: actions/checkout@v5
+
+      - name: Instalar o Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "1.26"
+          cache: false
+
+      - name: Baixar as dependencias
+        run: go mod tidy
+
+      - name: Instalar o golangci-lint
+        run: go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
+
+      - name: Rodar o golangci-lint (informativo, nao bloqueia)
+        run: golangci-lint run --issues-exit-code=0 ./...
+
+  security:
+    name: Seguranca (SCA e SAST)
+    runs-on: ubuntu-24.04
+    needs: build-test
+    steps:
+      - name: Baixar o codigo
+        uses: actions/checkout@v5
+
+      - name: Instalar o Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "1.26"
+          cache: false
+
+      - name: Baixar as dependencias
+        working-directory: evaluation-service
+        run: go mod tidy
+
+      - name: SCA - Trivy nas dependencias (falha se houver vulnerabilidade CRITICA)
+        run: |
+          docker run --rm -v "${{ github.workspace }}:/src" aquasec/trivy:latest \
+            fs --scanners vuln --severity CRITICAL --exit-code 1 /src/evaluation-service
+
+      - name: SAST - gosec no codigo (falha se houver problema de severidade alta)
+        working-directory: evaluation-service
+        run: |
+          go install github.com/securego/gosec/v2/cmd/gosec@latest
+          gosec -severity=high -confidence=high ./...
