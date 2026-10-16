@@ -4,7 +4,11 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"regexp"
 )
+
+// Nomes de flag aceitos: so letras, numeros, hifen e sublinhado
+var validFlagName = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
 
 type EvaluationResponse struct {
 	FlagName string `json:"flag_name"`
