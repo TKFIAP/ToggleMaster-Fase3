@@ -93,3 +93,22 @@ jobs:
         run: |
           go install github.com/securego/gosec/v2/cmd/gosec@latest
           gosec -severity=high -confidence=high ./...
+
+  image:
+    name: Imagem Docker (build e scan)
+    runs-on: ubuntu-24.04
+    needs: [lint, security]
+    steps:
+      - name: Baixar o codigo
+        uses: actions/checkout@v5
+
+      - name: Definir a etiqueta da imagem (7 primeiros caracteres do commit)
+        run: echo "IMAGE_TAG=${GITHUB_SHA::7}" >> "$GITHUB_ENV"
+
+      - name: Construir a imagem
+        run: docker build -t evaluation-service:${{ env.IMAGE_TAG }} ./evaluation-service
+
+      - name: Container scan - Trivy na imagem (falha se houver vulnerabilidade CRITICA com correcao)
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest \
+            image --severity CRITICAL --ignore-unfixed --exit-code 1 evaluation-service:${{ env.IMAGE_TAG }}
