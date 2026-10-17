@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: auth-service
-          image: 655026170372.dkr.ecr.us-east-1.amazonaws.com/auth-service:latest
+          image: CONTA_AWS.dkr.ecr.us-east-1.amazonaws.com/auth-service:inicial
           ports:
             - containerPort: 8001
           env:
