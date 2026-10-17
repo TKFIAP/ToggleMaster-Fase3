@@ -1,0 +1,94 @@
+name: analytics-service
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "analytics-service/**"
+      - ".github/workflows/analytics-service.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "analytics-service/**"
+      - ".github/workflows/analytics-service.yml"
+  workflow_dispatch:
+
+jobs:
+  build-test:
+    name: Build e testes
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: analytics-service
+    steps:
+      - name: Baixar o codigo
+        uses: actions/checkout@v5
+
+      - name: Instalar o Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Instalar as dependencias
+        run: pip install -r requirements.txt
+
+      - name: Compilar (conferir se o codigo nao tem erro de escrita)
+        run: python -m compileall -q .
+
+      - name: Testes unitarios (se existirem)
+        run: |
+          if ls test_*.py tests 2>/dev/null; then
+            pip install pytest
+            pytest
+          else
+            echo "Nenhum teste unitario encontrado no codigo-base"
+          fi
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-24.04
+    needs: build-test
+    defaults:
+      run:
+        working-directory: analytics-service
+    steps:
+      - name: Baixar o codigo
+        uses: actions/checkout@v5
+
+      - name: Instalar o Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Instalar o flake8
+        run: pip install flake8
+
+      - name: Erros graves (bloqueia)
+        run: flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+
+      - name: Estilo do codigo (informativo, nao bloqueia)
+        run: flake8 . --count --exit-zero --max-line-length=120 --statistics
+
+  security:
+    name: Seguranca (SCA e SAST)
+    runs-on: ubuntu-24.04
+    needs: build-test
+    steps:
+      - name: Baixar o codigo
+        uses: actions/checkout@v5
+
+      - name: Instalar o Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: SCA - Trivy nas dependencias (falha se houver vulnerabilidade CRITICA)
+        run: |
+          docker run --rm -v "${{ github.workspace }}:/src" aquasec/trivy:latest \
+            fs --scanners vuln --severity CRITICAL --exit-code 1 /src/analytics-service
+
+      - name: SAST - bandit no codigo (falha se houver problema de severidade alta)
+        working-directory: analytics-service
+        run: |
+          pip install bandit
+          bandit -r . -lll -iii
