@@ -111,3 +111,49 @@ jobs:
         run: |
           docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest \
             image --severity CRITICAL --ignore-unfixed --exit-code 1 flag-service:${{ env.IMAGE_TAG }}
+  deploy:
+    name: Publicar no ECR e atualizar o GitOps
+    runs-on: ubuntu-24.04
+    needs: image
+    if: github.event_name != 'pull_request' && vars.DEPLOY_ENABLED == 'true'
+    permissions:
+      contents: write
+    steps:
+      - name: Baixar o codigo
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Definir a etiqueta da imagem (7 primeiros caracteres do commit)
+        run: echo "IMAGE_TAG=${GITHUB_SHA::7}" >> "$GITHUB_ENV"
+
+      - name: Entregar as credenciais do Lab para o pipeline
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: us-east-1
+
+      - name: Login no ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Construir e enviar a imagem para o ECR
+        run: |
+          IMAGEM=${{ steps.ecr.outputs.registry }}/flag-service:${{ env.IMAGE_TAG }}
+          docker build -t "$IMAGEM" ./flag-service
+          docker push "$IMAGEM"
+
+      - name: Atualizar a etiqueta da imagem na pasta gitops
+        run: |
+          IMAGEM=${{ steps.ecr.outputs.registry }}/flag-service:${{ env.IMAGE_TAG }}
+          sed -i "s|image: .*/flag-service:.*|image: $IMAGEM|" gitops/flag-service.yaml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add gitops/flag-service.yaml
+          git commit -m "gitops: flag-service -> ${{ env.IMAGE_TAG }}"
+          for tentativa in 1 2 3; do
+            git pull --rebase && git push && break
+            sleep 5
+          done
