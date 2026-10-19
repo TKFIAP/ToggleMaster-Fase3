@@ -1,0 +1,59 @@
+[1mdiff --git a/terraform/main.tf b/terraform/main.tf[m
+[1mindex b3c7d51..34885a3 100644[m
+[1m--- a/terraform/main.tf[m
+[1m+++ b/terraform/main.tf[m
+[36m@@ -5,7 +5,7 @@[m [mmodule "networking" {[m
+ [m
+ # Pega a LabRole, que ja existe no AWS Academy (o Terraform nao pode criar permissoes no Lab)[m
+ data "aws_iam_role" "lab_role" {[m
+[31m-  name = "LabRole"[m
+[32m+[m[32m  name = var.iam_role_name[m
+ }[m
+ [m
+ module "eks" {[m
+[1mdiff --git a/terraform/providers.tf b/terraform/providers.tf[m
+[1mindex d9ef328..33fea2c 100644[m
+[1m--- a/terraform/providers.tf[m
+[1m+++ b/terraform/providers.tf[m
+[36m@@ -11,7 +11,7 @@[m [mterraform {[m
+ [m
+ provider "aws" {[m
+   region  = var.aws_region[m
+[31m-  profile = "lab"[m
+[32m+[m[32m  profile = var.aws_profile[m
+ }[m
+ [m
+ # O Helm instala programas dentro do cluster EKS.[m
+[36m@@ -24,7 +24,7 @@[m [mprovider "helm" {[m
+     exec = {[m
+       api_version = "client.authentication.k8s.io/v1beta1"[m
+       command     = "aws"[m
+[31m-      args        = ["eks", "get-token", "--cluster-name", module.eks.cluster_name, "--region", var.aws_region, "--profile", "lab"][m
+[32m+[m[32m      args        = ["eks", "get-token", "--cluster-name", module.eks.cluster_name, "--region", var.aws_region, "--profile", var.aws_profile][m
+     }[m
+   }[m
+ }[m
+\ No newline at end of file[m
+[1mdiff --git a/terraform/variables.tf b/terraform/variables.tf[m
+[1mindex 22110d6..eae1d5c 100644[m
+[1m--- a/terraform/variables.tf[m
+[1m+++ b/terraform/variables.tf[m
+[36m@@ -20,4 +20,16 @@[m [mvariable "db_password" {[m
+   description = "Senha dos bancos PostgreSQL (RDS). Valor definido no terraform.tfvars, que nao vai para o GitHub"[m
+   type        = string[m
+   sensitive   = true[m
+[31m-}[m
+\ No newline at end of file[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mvariable "aws_profile" {[m
+[32m+[m[32m  description = "Nome do perfil da AWS CLI usado pelo Terraform"[m
+[32m+[m[32m  type        = string[m
+[32m+[m[32m  default     = "lab"[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mvariable "iam_role_name" {[m
+[32m+[m[32m  description = "Nome da role IAM usada pelo cluster EKS e pelas maquinas"[m
+[32m+[m[32m  type        = string[m
+[32m+[m[32m  default     = "LabRole"[m
+[32m+[m[32m}[m

@@ -5,7 +5,7 @@ module "networking" {
 
 # Pega a LabRole, que ja existe no AWS Academy (o Terraform nao pode criar permissoes no Lab)
 data "aws_iam_role" "lab_role" {
-  name = "LabRole"
+  name = var.iam_role_name
 }
 
 module "eks" {

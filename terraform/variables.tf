@@ -21,3 +21,15 @@ variable "db_password" {
   type        = string
   sensitive   = true
 }
+
+variable "aws_profile" {
+  description = "Nome do perfil da AWS CLI usado pelo Terraform"
+  type        = string
+  default     = "lab"
+}
+
+variable "iam_role_name" {
+  description = "Nome da role IAM usada pelo cluster EKS e pelas maquinas"
+  type        = string
+  default     = "LabRole"
+}
