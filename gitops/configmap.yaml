@@ -5,7 +5,7 @@ metadata:
   namespace: togglemaster
 data:
   AWS_REGION: "us-east-1"
-  AWS_SQS_URL: "https://sqs.us-east-1.amazonaws.com/CONTA_AWS/togglemaster-events"
+  AWS_SQS_URL: "https://sqs.us-east-1.amazonaws.com/079024824660/togglemaster-events"
   AWS_DYNAMODB_TABLE: "ToggleMasterAnalytics"
 
   AUTH_PORT: "8001"
