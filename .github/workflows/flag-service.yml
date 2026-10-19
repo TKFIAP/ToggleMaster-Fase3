@@ -94,25 +94,50 @@ jobs:
           bandit -r . -lll -iii
 
   image:
-    name: Imagem Docker (build e scan)
+    name: Imagem Docker (build, scan e push)
     runs-on: ubuntu-24.04
     needs: [lint, security]
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
     steps:
       - name: Baixar o codigo
         uses: actions/checkout@v5
 
-      - name: Definir a etiqueta da imagem (7 primeiros caracteres do commit)
-        run: echo "IMAGE_TAG=${GITHUB_SHA::7}" >> "$GITHUB_ENV"
+      - name: Definir a etiqueta da imagem (v1.0.0 + 7 primeiros caracteres do commit)
+        id: tag
+        run: echo "tag=v1.0.0-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
 
       - name: Construir a imagem
-        run: docker build -t flag-service:${{ env.IMAGE_TAG }} ./flag-service
+        run: docker build -t flag-service:${{ steps.tag.outputs.tag }} ./flag-service
 
       - name: Container scan - Trivy na imagem (falha se houver vulnerabilidade CRITICA com correcao)
         run: |
           docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest \
-            image --severity CRITICAL --ignore-unfixed --exit-code 1 flag-service:${{ env.IMAGE_TAG }}
-  deploy:
-    name: Publicar no ECR e atualizar o GitOps
+            image --severity CRITICAL --ignore-unfixed --exit-code 1 flag-service:${{ steps.tag.outputs.tag }}
+
+      - name: Entregar as credenciais do Lab para o pipeline
+        if: github.event_name != 'pull_request' && vars.DEPLOY_ENABLED == 'true'
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: us-east-1
+
+      - name: Login no ECR
+        if: github.event_name != 'pull_request' && vars.DEPLOY_ENABLED == 'true'
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Enviar ao ECR a mesma imagem que passou pelo scan
+        if: github.event_name != 'pull_request' && vars.DEPLOY_ENABLED == 'true'
+        run: |
+          IMAGEM=${{ steps.ecr.outputs.registry }}/flag-service:${{ steps.tag.outputs.tag }}
+          docker tag flag-service:${{ steps.tag.outputs.tag }} "$IMAGEM"
+          docker push "$IMAGEM"
+
+  gitops:
+    name: Atualizar o GitOps
     runs-on: ubuntu-24.04
     needs: image
     if: github.event_name != 'pull_request' && vars.DEPLOY_ENABLED == 'true'
@@ -124,36 +149,20 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Definir a etiqueta da imagem (7 primeiros caracteres do commit)
-        run: echo "IMAGE_TAG=${GITHUB_SHA::7}" >> "$GITHUB_ENV"
-
-      - name: Entregar as credenciais do Lab para o pipeline
-        uses: aws-actions/configure-aws-credentials@v5
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
-          aws-region: us-east-1
-
-      - name: Login no ECR
-        id: ecr
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Construir e enviar a imagem para o ECR
-        run: |
-          IMAGEM=${{ steps.ecr.outputs.registry }}/flag-service:${{ env.IMAGE_TAG }}
-          docker build -t "$IMAGEM" ./flag-service
-          docker push "$IMAGEM"
-
       - name: Atualizar a etiqueta da imagem na pasta gitops
+        env:
+          TAG: ${{ needs.image.outputs.tag }}
         run: |
-          IMAGEM=${{ steps.ecr.outputs.registry }}/flag-service:${{ env.IMAGE_TAG }}
-          sed -i "s|image: .*/flag-service:.*|image: $IMAGEM|" gitops/flag-service.yaml
+          sed -i "s|\(image: .*/flag-service:\).*|\1$TAG|" gitops/flag-service.yaml
+          if git diff --quiet; then
+            echo "A etiqueta ja estava atualizada. Nada a fazer."
+            exit 0
+          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add gitops/flag-service.yaml
-          git commit -m "gitops: flag-service -> ${{ env.IMAGE_TAG }}"
-          for tentativa in 1 2 3; do
+          git commit -m "gitops: flag-service -> $TAG"
+          for _ in 1 2 3; do
             git pull --rebase && git push && break
             sleep 5
           done
