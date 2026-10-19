@@ -41,3 +41,17 @@ module "ecr" {
     "analytics-service",
   ]
 }
+
+# No destroy, espera 90 segundos depois de remover os addons e antes de apagar
+# o cluster e a rede: tempo para a AWS apagar o Load Balancer do ingress-nginx.
+resource "time_sleep" "aguarda_load_balancer" {
+  destroy_duration = "90s"
+  depends_on       = [module.eks, module.networking]
+}
+
+module "addons" {
+  source                  = "./modules/addons"
+  argocd_application_file = "${path.root}/../argocd/application.yaml"
+
+  depends_on = [time_sleep.aguarda_load_balancer]
+}
